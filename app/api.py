@@ -69,6 +69,7 @@ def create_service(
 @router.get("/services", response_model=list[ServiceOut], tags=["Services"])
 def list_services(
     mine: bool = False,
+    search: str | None = Query(None, min_length=1, max_length=120),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     user: User = Depends(current_user),
@@ -77,6 +78,10 @@ def list_services(
     query = select(Service)
     if mine:
         query = query.where(Service.owner_id == user.id)
+    if search is not None:
+        if not search.strip():
+            raise HTTPException(422, "Search must contain non-whitespace characters")
+        query = query.where(Service.name.icontains(search.strip(), autoescape=True))
     return db.scalars(query.order_by(Service.name, Service.id).limit(limit).offset(offset)).all()
 
 
