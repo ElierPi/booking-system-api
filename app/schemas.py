@@ -1,4 +1,5 @@
 from datetime import datetime, time
+from enum import StrEnum
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -58,6 +59,11 @@ class WindowOut(WindowIn):
     service_id: UUID
 
 
+class BookingStatus(StrEnum):
+    CONFIRMED = "confirmed"
+    CANCELLED = "cancelled"
+
+
 class BookingIn(Input):
     service_id: UUID
     starts_at: AwareDatetime
@@ -70,7 +76,7 @@ class BookingOut(BaseModel):
     customer_id: UUID
     starts_at: datetime
     ends_at: datetime
-    status: str
+    status: BookingStatus
     created_at: datetime
 
 

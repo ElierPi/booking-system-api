@@ -15,6 +15,7 @@ from app.schemas import (
     BookingIn,
     BookingOut,
     BookingPage,
+    BookingStatus,
     ServiceIn,
     ServiceOut,
     Slot,
@@ -225,6 +226,7 @@ def create_booking(
 @router.get("/bookings", response_model=BookingPage, tags=["Bookings"])
 def list_bookings(
     as_provider: bool = False,
+    status: BookingStatus | None = None,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     user: User = Depends(current_user),
@@ -232,6 +234,8 @@ def list_bookings(
 ):
     condition = Service.owner_id == user.id if as_provider else Booking.customer_id == user.id
     query = select(Booking).join(Service, Booking.service_id == Service.id).where(condition)
+    if status is not None:
+        query = query.where(Booking.status == status)
     total = db.scalar(select(func.count()).select_from(query.subquery()))
     items = db.scalars(
         query.order_by(Booking.starts_at, Booking.id).limit(limit).offset(offset)
