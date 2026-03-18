@@ -1,5 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
-from datetime import UTC, datetime, time, timedelta
+from datetime import UTC, datetime, timedelta
 from threading import Barrier
 from uuid import UUID
 
@@ -10,45 +10,6 @@ from sqlalchemy.exc import IntegrityError
 from app.core.database import SessionLocal
 from app.main import app
 from app.models import Booking
-
-
-@pytest.fixture
-def setup_service(client, auth):
-    owner = auth("provider@example.com")
-    customer = auth("customer@example.com")
-    outsider = auth("outsider@example.com")
-    day = datetime.now(UTC).date() + timedelta(days=7)
-    start = datetime.combine(day, time(9), tzinfo=UTC)
-    service = client.post(
-        "/api/v1/services",
-        headers=owner,
-        json={
-            "name": "Consulting",
-            "timezone": "UTC",
-            "duration_minutes": 60,
-        },
-    )
-    assert service.status_code == 201, service.text
-    service_id = service.json()["id"]
-    window = client.post(
-        f"/api/v1/services/{service_id}/windows",
-        headers=owner,
-        json={
-            "weekday": day.weekday(),
-            "starts_at": "09:00",
-            "ends_at": "12:00",
-        },
-    )
-    assert window.status_code == 201, window.text
-    return {
-        "owner": owner,
-        "customer": customer,
-        "outsider": outsider,
-        "service_id": service_id,
-        "day": day,
-        "start": start,
-        "window_id": window.json()["id"],
-    }
 
 
 def book(client, setup, start=None, headers=None):

@@ -3,6 +3,7 @@ from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from pydantic import AwareDatetime
 from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -227,15 +228,23 @@ def create_booking(
 def list_bookings(
     as_provider: bool = False,
     status: BookingStatus | None = None,
+    starts_from: AwareDatetime | None = None,
+    starts_before: AwareDatetime | None = None,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     user: User = Depends(current_user),
     db: Session = Depends(get_db),
 ):
+    if starts_from and starts_before and starts_from >= starts_before:
+        raise HTTPException(422, "starts_from must be before starts_before")
     condition = Service.owner_id == user.id if as_provider else Booking.customer_id == user.id
     query = select(Booking).join(Service, Booking.service_id == Service.id).where(condition)
     if status is not None:
         query = query.where(Booking.status == status)
+    if starts_from is not None:
+        query = query.where(Booking.starts_at >= starts_from)
+    if starts_before is not None:
+        query = query.where(Booking.starts_at < starts_before)
     total = db.scalar(select(func.count()).select_from(query.subquery()))
     items = db.scalars(
         query.order_by(Booking.starts_at, Booking.id).limit(limit).offset(offset)
