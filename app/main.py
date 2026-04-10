@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app import api, auth
 from app.core.database import engine, get_db
+from app.features import reschedule
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -28,6 +29,7 @@ app = FastAPI(
 )
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(api.router, prefix="/api/v1")
+app.include_router(reschedule.router, prefix="/api/v1")
 
 
 @app.middleware("http")
