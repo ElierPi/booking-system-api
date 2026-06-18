@@ -39,6 +39,10 @@ async def request_logging(request: Request, call_next):
     start = perf_counter()
     response = await call_next(request)
     response.headers["X-Request-ID"] = request_id
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    if request.url.path.startswith("/api/v1/"):
+        response.headers["Cache-Control"] = "no-store"
     logger.info(
         "request_id=%s method=%s path=%s status=%s duration_ms=%.2f",
         request_id,
