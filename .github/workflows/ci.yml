@@ -40,5 +40,15 @@ jobs:
       - run: alembic upgrade head
       - run: alembic check
       - run: pytest --cov=app --cov-report=term-missing
+      - name: Build production image
+        if: matrix.python == '3.12'
+        run: docker build --tag portfolio-api:ci .
+      - name: Smoke-test image as non-root without network access
+        if: matrix.python == '3.12'
+        run: >-
+          docker run --rm --network none -e DATABASE_URL -e JWT_SECRET
+          portfolio-api:ci python -c
+          "import os; from app.main import app; assert os.getuid() != 0;
+          assert '/health' in app.openapi()['paths']; print('Image smoke test passed')"
       - run: alembic downgrade base
       - run: alembic upgrade head
