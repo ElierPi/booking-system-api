@@ -1,0 +1,52 @@
+@base = http://localhost:8002
+@token = paste-access-token
+@serviceId = paste-service-id
+@bookingId = paste-booking-id
+# Set a future date and timestamp matching the weekday/window below.
+@day = 2026-11-02
+@start = 2026-11-02T09:00:00-05:00
+
+### Register a provider (register a second account to act as customer)
+POST {{base}}/api/v1/auth/register
+Content-Type: application/json
+
+{"email":"provider@example.com","password":"Change-this-example-password-123"}
+
+### Login. Copy access_token to @token.
+POST {{base}}/api/v1/auth/token
+Content-Type: application/x-www-form-urlencoded
+
+username=provider%40example.com&password=Change-this-example-password-123
+
+### Create service. Copy id to @serviceId.
+POST {{base}}/api/v1/services
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"name":"Backend consultation","timezone":"America/Bogota","duration_minutes":60}
+
+### Add Monday window (Monday=0)
+POST {{base}}/api/v1/services/{{serviceId}}/windows
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"weekday":0,"starts_at":"09:00","ends_at":"17:00"}
+
+### Check availability (UTC response)
+GET {{base}}/api/v1/services/{{serviceId}}/availability?day={{day}}
+Authorization: Bearer {{token}}
+
+### Book. Copy id to @bookingId. Repeating this request returns 409.
+POST {{base}}/api/v1/bookings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"service_id":"{{serviceId}}","starts_at":"{{start}}"}
+
+### My reservations
+GET {{base}}/api/v1/bookings
+Authorization: Bearer {{token}}
+
+### Cancel (customer or service owner)
+POST {{base}}/api/v1/bookings/{{bookingId}}/cancel
+Authorization: Bearer {{token}}
