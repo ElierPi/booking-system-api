@@ -106,6 +106,17 @@ En bash usa `export`. Se cubren dos solicitudes concurrentes (una `201`, otra `4
 
 Las dependencias de ejecución están fijadas en `requirements.lock`; las de desarrollo en `requirements-dev.lock`. Los tokens JWT verifican algoritmo, audiencia, emisor y expiración; las contraseñas usan Argon2. Incluye `X-Request-ID`, logs de duración, `/health` y `/ready`.
 
+## Funciones añadidas
+
+- `GET /api/v1/services?search=python` busca nombres sin distinguir mayúsculas, tratando `%` y `_` literalmente. Se combina con `mine=true`.
+- `GET /api/v1/bookings?status=confirmed` filtra por `confirmed` o `cancelled`. Se combina con `as_provider=true`, paginación y fechas.
+- `starts_from` es inclusivo y `starts_before` es exclusivo; ambos requieren timestamps con zona u offset. Un intervalo invertido o vacío devuelve `422`.
+- `POST /api/v1/bookings/{id}/reschedule` recibe `{"starts_at":"2026-11-02T10:00:00-05:00"}`. Cliente o propietario pueden mover una reserva futura y confirmada dentro del mismo servicio. Conserva su ID, libera el intervalo anterior y aplica la restricción de solapamientos. Si el destino está ocupado devuelve `409` y mantiene la reserva original. Repetir el horario actual es válido.
+- `GET /api/v1/services/{id}/availability-range?day_from=2026-11-02&day_to=2026-11-08` devuelve disponibilidad por día, incluidos los días vacíos. Admite hasta 31 días inclusivos, dentro del horizonte de 365 días del servicio. Hace una sola consulta de reservas para todo el intervalo y utiliza un recorrido ordenado para retirar los intervalos ocupados.
+- Las respuestas bajo `/api/v1/`, incluidos los errores, llevan `Cache-Control: no-store`, junto con cabeceras `nosniff` y `no-referrer`.
+
+Los endpoints adicionales están en `app/features/`. CI construye la imagen Docker y comprueba su importación y OpenAPI como usuario sin privilegios y sin acceso a red. La suite también verifica los datos de demostración y que una reprogramación rechazada conserve la reserva anterior.
+
 ## Alcance
 
 No incluye pagos, notificaciones, festivos, excepciones por fecha, lista de espera, refresh tokens o recuperación de contraseñas. Los servicios no se editan ni eliminan en esta versión para mantener estables las reglas de las reservas existentes. La disponibilidad es una fotografía: un slot puede ocuparse antes del POST y devolver `409`. Para publicar la API añade TLS, límites de solicitudes, gestión de secretos y respaldos según el entorno.

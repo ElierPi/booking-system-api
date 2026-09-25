@@ -50,3 +50,22 @@ Authorization: Bearer {{token}}
 ### Cancel (customer or service owner)
 POST {{base}}/api/v1/bookings/{{bookingId}}/cancel
 Authorization: Bearer {{token}}
+
+### Search the service catalog
+GET {{base}}/api/v1/services?search=backend
+Authorization: Bearer {{token}}
+
+### Filter confirmed reservations
+GET {{base}}/api/v1/bookings?status=confirmed&starts_from=2026-11-01T00:00:00Z&starts_before=2026-12-01T00:00:00Z
+Authorization: Bearer {{token}}
+
+### Reschedule an existing future, confirmed reservation (run before cancelling)
+POST {{base}}/api/v1/bookings/{{bookingId}}/reschedule
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"starts_at":"2026-11-02T10:00:00-05:00"}
+
+### Availability across multiple days; update both dates to a future range
+GET {{base}}/api/v1/services/{{serviceId}}/availability-range?day_from=2026-11-02&day_to=2026-11-08
+Authorization: Bearer {{token}}
